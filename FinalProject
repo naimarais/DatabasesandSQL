@@ -1,0 +1,187 @@
+Introduction
+Using this Python notebook you will:
+
+Understand three Chicago datasets
+Load the three datasets into three tables in a SQLIte database
+Execute SQL queries to answer assignment questions
+Understand the datasets¶
+To complete the assignment problems in this notebook you will be using three datasets that are available on the city of Chicago's Data Portal:
+
+Socioeconomic Indicators in Chicago
+Chicago Public Schools
+Chicago Crime Data
+1. Socioeconomic Indicators in Chicago
+This dataset contains a selection of six socioeconomic indicators of public health significance and a “hardship index,” for each Chicago community area, for the years 2008 – 2012.
+
+A detailed description of this dataset and the original dataset can be obtained from the Chicago Data Portal at: https://data.cityofchicago.org/Health-Human-Services/Census-Data-Selected-socioeconomic-indicators-in-C/kn9c-c2s2
+
+2. Chicago Public Schools
+This dataset shows all school level performance data used to create CPS School Report Cards for the 2011-2012 school year. This dataset is provided by the city of Chicago's Data Portal.
+
+A detailed description of this dataset and the original dataset can be obtained from the Chicago Data Portal at: https://data.cityofchicago.org/Education/Chicago-Public-Schools-Progress-Report-Cards-2011-/9xs2-f89t
+
+3. Chicago Crime Data
+This dataset reflects reported incidents of crime (with the exception of murders where data exists for each victim) that occurred in the City of Chicago from 2001 to present, minus the most recent seven days.
+
+A detailed description of this dataset and the original dataset can be obtained from the Chicago Data Portal at: https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-present/ijzp-q8t2
+
+Download the datasets
+This assignment requires you to have these three tables populated with a subset of the whole datasets.
+
+In many cases the dataset to be analyzed is available as a .CSV (comma separated values) file, perhaps on the internet. Click on the links below to download and save the datasets (.CSV files):
+
+Chicago Census Data
+
+Chicago Public Schools
+
+Chicago Crime Data
+
+NOTE: Ensure you have downloaded the datasets using the links above instead of directly from the Chicago Data Portal. The versions linked here are subsets of the original datasets and have some of the column names modified to be more database friendly which will make it easier to complete this assignment.
+
+Store the datasets in database tables
+To analyze the data using SQL, it first needs to be loaded into SQLite DB. We will create three tables in as under:
+
+CENSUS_DATA
+CHICAGO_PUBLIC_SCHOOLS
+CHICAGO_CRIME_DATA
+Let us now load the ipython-sql extension and establish a connection with the database
+
+Here you will be loading the csv files into the pandas Dataframe and then loading the data into the above mentioned sqlite tables.
+
+Next you will be connecting to the sqlite database FinalDB.
+
+Refer to the previous lab for hints .
+
+Hands-on Lab: Analyzing a real World Data Set
+
+import csv, sqlite3
+​
+con = sqlite3.connect("RealWorldData.db")
+cur = con.cursor()
+!pip install -q pandas==1.1.5
+%load_ext sql
+%sql sqlite:///RealWorldData.db
+'Connected: @RealWorldData.db'
+​
+import pandas
+df = pandas.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-DB0201EN-SkillsNetwork/labs/FinalModule_Coursera_V5/data/ChicagoPublicSchools.csv")
+df.to_sql("CHICAGO_PUBLIC_SCHOOLS_DATA", con, if_exists='replace', index=False, method="multi")
+​
+df = pandas.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-DB0201EN-SkillsNetwork/labs/FinalModule_Coursera_V5/data/ChicagoCensusData.csv")
+df.to_sql("CENSUS_DATA", con, if_exists='replace', index=False,method="multi")
+​
+df = pandas.read_csv("https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-DB0201EN-SkillsNetwork/labs/FinalModule_Coursera_V5/data/ChicagoCrimeData.csv")
+df.to_sql("CHICAGO_CRIME_DATA", con, if_exists='replace', index=False, method="multi")
+​
+/home/jupyterlab/conda/envs/python/lib/python3.7/site-packages/pandas/core/generic.py:2615: UserWarning: The spaces in these column names will not be changed. In pandas versions < 0.14, spaces were converted to underscores.
+  method=method,
+​
+%sql SELECT name FROM sqlite_master WHERE type='table'
+ * sqlite:///RealWorldData.db
+Done.
+name
+CHICAGO_PUBLIC_SCHOOLS_DATA
+CENSUS_DATA
+CHICAGO_CRIME_DATA
+Problems
+Now write and execute SQL queries to solve assignment problems
+
+Problem 1
+Find the total number of crimes recorded in the CRIME table.
+%sql select count(*) from CHICAGO_CRIME_DATA 
+ * sqlite:///RealWorldData.db
+Done.
+count(*)
+533
+Problem 2
+List community areas with per capita income less than 11000.
+%sql select COMMUNITY_AREA_NAME from CENSUS_DATA where PER_CAPITA_INCOME < 11000
+ * sqlite:///RealWorldData.db
+Done.
+COMMUNITY_AREA_NAME
+West Garfield Park
+South Lawndale
+Fuller Park
+Riverdale
+Problem 3
+List all case numbers for crimes involving minors?(children are not considered minors for the purposes of crime analysis)
+%sql select CASE_NUMBER from CHICAGO_CRIME_DATA where DESCRIPTION LIKE '%MINOR%'
+ * sqlite:///RealWorldData.db
+Done.
+CASE_NUMBER
+HL266884
+HK238408
+Problem 4
+List all kidnapping crimes involving a child?
+%sql SELECT CASE_NUMBER FROM CHICAGO_CRIME_DATA WHERE PRIMARY_TYPE LIKE '%KIDNAPPING%'  AND DESCRIPTION LIKE '%CHILD%' 
+ * sqlite:///RealWorldData.db
+Done.
+CASE_NUMBER
+HN144152
+Problem 5
+What kinds of crimes were recorded at schools?
+%sql select distinct(PRIMARY_TYPE) from CHICAGO_CRIME_DATA where LOCATION_DESCRIPTION LIKE '%SCHOOL%'
+ * sqlite:///RealWorldData.db
+Done.
+PRIMARY_TYPE
+BATTERY
+CRIMINAL DAMAGE
+NARCOTICS
+ASSAULT
+CRIMINAL TRESPASS
+PUBLIC PEACE VIOLATION
+Problem 6
+List the average safety score for each type of school.
+%sql select "Elementary, Middle, or High School", AVG(SAFETY_SCORE) AVERAGE_SAFETY_SCORE from CHICAGO_PUBLIC_SCHOOLS_DATA group by "Elementary, Middle, or High Scool";
+ * sqlite:///RealWorldData.db
+Done.
+Elementary, Middle, or High School	AVERAGE_SAFETY_SCORE
+ES	49.50487329434698
+Problem 7
+List 5 community areas with highest % of households below poverty line
+%sql select COMMUNITY_AREA_NAME, PERCENT_HOUSEHOLDS_BELOW_POVERTY from CENSUS_DATA  order by PERCENT_HOUSEHOLDS_BELOW_POVERTY DESC LIMIT 5
+ * sqlite:///RealWorldData.db
+Done.
+COMMUNITY_AREA_NAME	PERCENT_HOUSEHOLDS_BELOW_POVERTY
+Riverdale	56.5
+Fuller Park	51.2
+Englewood	46.6
+North Lawndale	43.1
+East Garfield Park	42.4
+Problem 8
+Which community area is most crime prone?
+%sql select COMMUNITY_AREA_NUMBER, COUNT(CASE_NUMBER) AS MOST_CRIME \
+     from CHICAGO_CRIME_DATA \
+     group by COMMUNITY_AREA_NUMBER \
+     order by MOST_CRIME desc \
+     LIMIT 1
+ * sqlite:///RealWorldData.db
+Done.
+COMMUNITY_AREA_NUMBER	MOST_CRIME
+25.0	43
+Double-click here for a hint
+
+Problem 9
+Use a sub-query to find the name of the community area with highest hardship index
+%sql select COMMUNITY_AREA_NAME, HARDSHIP_INDEX \
+from CENSUS_DATA where HARDSHIP_INDEX = (select MAX(HARDSHIP_INDEX) from CENSUS_DATA) 
+​
+ * sqlite:///RealWorldData.db
+Done.
+COMMUNITY_AREA_NAME	HARDSHIP_INDEX
+Riverdale	98.0
+Problem 10
+Use a sub-query to determine the Community Area Name with most number of crimes?
+
+
+
+
+
+
+%sql select COMMUNITY_AREA_NUMBER, COMMUNITY_AREA_NAME from CENSUS_DATA \
+where COMMUNITY_AREA_NUMBER=( SELECT COMMUNITY_AREA_NUMBER from CHICAGO_CRIME_DATA GROUP BY COMMUNITY_AREA_NUMBER ORDER BY COUNT(*) DESC LIMIT 1)
+                              
+ * sqlite:///RealWorldData.db
+Done.
+COMMUNITY_AREA_NUMBER	COMMUNITY_AREA_NAME
+25.0	Austin
